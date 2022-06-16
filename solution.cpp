@@ -14,6 +14,15 @@ using namespace std;
 /*takeaways
   - DP
     - decode 1 or 2 digits at a time
+    - dp[i] = dp[i-2] if i is valid.
+      - we add s[i] to s[0..i-2] (single digit case)
+      - we are evaluating the string s[0..i-2,i]
+    - dp[i] = dp[i-1] if s[i-1,i] is valid.
+      - we add s[i] to s[0..i-1] (two digit case)
+      - we are evaluating the string s[0..i]
+    - in implemenation we use two variables
+      to remember dp[i-2] and dp[i-1]
+
   - time complexity: O(n)
 */
 
@@ -26,40 +35,55 @@ int Solution::numDecodings(string s)
     return 1;
 
   /*
-     - f1
-       - carry over ways of decoding one digit
-     - f2
-       - carry over ways of decoding both one and
-         two digits
+     - prevprev
+       - dp[i-2]
+     - prev
+       - dp[i-1]
      - consider the case of "29"
-       - for "2" both f1 and f2 are 1 as it's not
-         passible to have 2 digits
+       - for "2" there is no dp[0-2]=dp[-2].
+         - that's why we need to set prevprev=1 to
+           the the ball rolling
+         - dp[0] = 1
        - for "9"
-         - 9 is valid so carry over f1 = 1
-         - 29 is not valid so we can't count the f2 part
-         - f2 = f1 = 1;
+         - 9 is valid but there is no dp[1-2]=dp[-1].
+           - that's why we need to set prevprev=1 to
+             the the ball rolling
+           - dp[1] = 1
+         - 29 is not valid so we don't add dp[1-1]=dp[0]
        - and indeed we only have one way to decode the
          string which is 2-9
   */
-  auto f1 = 1, f2 = 1;
+  auto prevprev = 1, prev = 1;
   for (auto i = 1; i < s.size(); i++)
   {
-    /* for example "200" */
+    /* for example "200"
+       - i = 2
+       - s[2] = "0", s[1..2] = "00" neither is valid
+    */
     if (!_isValid(s[i]) && !_isValid(s[i - 1], s[i]))
       return 0;
-    auto w = 0;
-    /* look at a single digit */
-    if (_isValid(s[i]))
-      w += f1;
-    /* look at two digits */
-    if (_isValid(s[i - 1], s[i]))
-      w += f2;
 
-    f1 = f2;
-    f2 = w;
+    /* if you can reach here that means
+       - either s[i] or s[i-1][i] is valid
+       - or both are valid
+    */
+
+    auto w = 0;
+    /* carry over dp[i-2]
+     */
+    if (_isValid(s[i]))
+      w += prevprev;
+    /* carry over dp[i-1]
+     */
+    if (_isValid(s[i - 1], s[i]))
+      w += prev;
+
+    /* w records what you have approved */
+    prevprev = prev;
+    prev = w;
   }
 
-  return f2;
+  return prev;
 }
 
 bool Solution::_isValid(char c)
